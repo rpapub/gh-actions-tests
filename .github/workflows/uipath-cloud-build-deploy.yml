@@ -1,0 +1,50 @@
+name: UiPath Cloud uipcli.exe Build and Deploy
+
+on:
+  push:
+    branches:
+      - "**" # Trigger on pushes to any branch
+  pull_request:
+    branches:
+      - "**" # Trigger on pull requests to any branch
+  schedule:
+    - cron: "*/15 * * * *" # Trigger every 15 minutes
+  workflow_dispatch: # Allow manual triggering of the workflow
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest # Use a Windows runner
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      # If you don't have commands for clearing old results, comment out or remove this step
+      #- name: Clear old job results
+      #  run: # Add your commands to clear old results here
+
+      - name: Download and Extract UiPath CLI
+        run: |
+          $version = "23.6.8581.19168"
+          $extractPath = "C:\Program Files\uipcli"
+          $packageName = "UiPath.CLI.Windows"
+          $packageUrl = "https://uipath.pkgs.visualstudio.com/Public.Feeds/_packaging/UiPath-Official/nuget/v3/flat2/$packageName/$version/$packageName.$version.nupkg"
+          $tempPath = [System.IO.Path]::GetTempPath() + "$packageName.$version.nupkg"
+          $tempZipPath = [System.IO.Path]::GetTempPath() + "$packageName.$version.zip"
+          Invoke-WebRequest -Uri $packageUrl -OutFile $tempPath
+          Rename-Item -Path $tempPath -NewName $tempZipPath
+          Expand-Archive -Path $tempZipPath -DestinationPath $extractPath -Force
+        shell: pwsh
+
+      - name: Read project.json and echo version
+        run: |
+          $json = Get-Content project.json | ConvertFrom-Json
+          echo "Project Version: $json.projectVersion"
+        env:
+          UiPathCloudAccountName: ${{ secrets.UiPathCloudAccountName }}
+          UiPathCloudFolderName: ${{ secrets.UiPathCloudFolderName }}
+          UiPathCloudOrchestratorUrl: ${{ secrets.UiPathCloudOrchestratorUrl }}
+          UiPathCloudAdminTenantServicesApiAccessKey: ${{ secrets.UiPathCloudAdminTenantServicesApiAccessKey }}
+          UiPathCloudApplicationId: ${{ secrets.UiPathCloudApplicationId }}
+          UiPathCloudApplicationSecret: ${{ secrets.UiPathCloudApplicationSecret }}
+          UiPathCloudApplicationScope: ${{ secrets.UiPathCloudApplicationScope }}
