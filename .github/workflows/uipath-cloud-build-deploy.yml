@@ -8,16 +8,27 @@ on:
     branches:
       - "**" # Trigger on pull requests to any branch
   schedule:
-    - cron: "*/15 * * * *" # Trigger every 15 minutes
+    - cron: "42 */2 * * *" # Trigger repeatedly, every 2 hours, at 42 minutes past the hour
   workflow_dispatch: # Allow manual triggering of the workflow
+
+env:
+  # Setting an environment variable with the value of a configuration variable
+  UIPATHCLOUDACCOUNTNAME: ${{ vars.UIPATHCLOUDACCOUNTNAME }}
+  UIPATHCLOUDAPPLICATIONID: ${{ vars.UIPATHCLOUDAPPLICATIONID }}
+  UIPATHCLOUDAPPLICATIONSCOPE: ${{ vars.UIPATHCLOUDAPPLICATIONSCOPE }}
+  UIPATHCLOUDFOLDERNAME: ${{ vars.UIPATHCLOUDFOLDERNAME }}
+  UIPATHCLOUDTENANTNAME: ${{ vars.UIPATHCLOUDTENANTNAME }}
+  UIPATHCLOUDORCHESTRATORURL: ${{ vars.UIPATHCLOUDORCHESTRATORURL }}
 
 jobs:
   build-and-deploy:
     runs-on: windows-latest # Use a Windows runner
+    environment:
+      name: Development
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # If you don't have commands for clearing old results, comment out or remove this step
       #- name: Clear old job results
@@ -38,13 +49,59 @@ jobs:
 
       - name: Read project.json and echo version
         run: |
-          $json = Get-Content project.json | ConvertFrom-Json
-          echo "Project Version: $json.projectVersion"
-        env:
-          UiPathCloudAccountName: ${{ secrets.UiPathCloudAccountName }}
-          UiPathCloudFolderName: ${{ secrets.UiPathCloudFolderName }}
-          UiPathCloudOrchestratorUrl: ${{ secrets.UiPathCloudOrchestratorUrl }}
-          UiPathCloudAdminTenantServicesApiAccessKey: ${{ secrets.UiPathCloudAdminTenantServicesApiAccessKey }}
-          UiPathCloudApplicationId: ${{ secrets.UiPathCloudApplicationId }}
-          UiPathCloudApplicationSecret: ${{ secrets.UiPathCloudApplicationSecret }}
-          UiPathCloudApplicationScope: ${{ secrets.UiPathCloudApplicationScope }}
+          $json = Get-Content "$env:GITHUB_WORKSPACE\project.json" -Raw | ConvertFrom-Json
+          $projectVersion = $json.projectVersion
+          echo "PROJECT_VERSION=$projectVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $name = $json.name
+          echo "PROJECT_NAME=$name" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo $json
+        shell: pwsh
+
+      # New step to echo the PROJECT_VERSION
+      - name: Echo Project Version
+        run: |
+          echo "Project Version: $env:PROJECT_VERSION"
+          echo "Project Name: $env:PROJECT_NAME"
+
+      - name: Echo All Environment Variables
+        shell: pwsh
+        run: |
+          Get-ChildItem env: | ForEach-Object { Write-Host $_.Name = $_.Value }
+
+      - name: Run UiPath CLI Command
+        run: |
+          & 'C:\Program Files\uipcli\tools\uipcli.exe' package pack "$env:GITHUB_WORKSPACE\project.json" --output "output" --traceLevel Verbose --autoVersion --disableTelemetry --outputType Process
+        shell: pwsh
+
+      - name: List Contents of Output Directory
+        run: |
+          Get-ChildItem "output" -Recurse
+        shell: pwsh
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: uipcli-package-pack-output
+          path: output/${{ env.PROJECT_NAME }}*.nupkg
+
+      - name: Deploy to Development
+        run: |
+          # Specify the directory where NuGet packages are located
+          $nupkg_directory = "$env:GITHUB_WORKSPACE/output"
+
+          # List all NuGet package files in the directory
+          $nupkg_files = Get-ChildItem $nupkg_directory -Filter "${{ env.PROJECT_NAME }}*.nupkg" -File
+
+          if ($nupkg_files.Count -eq 0) {
+            echo "No matching NuGet package files found."
+          } elseif ($nupkg_files.Count -eq 1) {
+            # If only one matching file is found, use it
+            $nupkg_file = $nupkg_files[0].FullName
+            echo "NuGet Package File: $nupkg_file"
+            
+            # Run uipcli.exe command with the selected package file
+            & 'C:\Program Files\uipcli\tools\uipcli.exe' package deploy "$nupkg_file" ${{ env.UIPATHCLOUDORCHESTRATORURL }} ${{ env.UIPATHCLOUDTENANTNAME }} --token ${{ secrets.UIPATHCLOUDADMINTENANTSERVICESAPIACCESSKEY }} --accountName ${{ env.UIPATHCLOUDACCOUNTNAME }}
+          } else {
+            echo "Multiple matching NuGet package files found. Unable to proceed."
+          }
+        shell: pwsh

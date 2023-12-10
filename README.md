@@ -1,0 +1,1 @@
+[![UiPath Cloud uipcli.exe Build and Deploy](https://github.com/rpapub/gh-actions-tests/actions/workflows/uipath-cloud-build-deploy.yml/badge.svg)](https://github.com/rpapub/gh-actions-tests/actions/workflows/uipath-cloud-build-deploy.yml)
