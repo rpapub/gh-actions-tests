@@ -1,0 +1,41 @@
+name: UiPath project.json semver versioning
+
+on:
+  push:
+    branches:
+      - "**" # Trigger on pushes to any branch
+  pull_request:
+    branches:
+      - "**" # Trigger on pull requests to any branch
+  schedule:
+    - cron: "*/5 * * * *" # Trigger every 5 minutes
+  workflow_dispatch: # Allow manual triggering of the workflow
+
+env:
+  # Setting an environment variable with the value of a configuration variable
+  UIPATHCLOUDACCOUNTNAME: ${{ vars.UIPATHCLOUDACCOUNTNAME }}
+  UIPATHCLOUDAPPLICATIONID: ${{ vars.UIPATHCLOUDAPPLICATIONID }}
+  UIPATHCLOUDAPPLICATIONSCOPE: ${{ vars.UIPATHCLOUDAPPLICATIONSCOPE }}
+  UIPATHCLOUDFOLDERNAME: ${{ vars.UIPATHCLOUDFOLDERNAME }}
+  UIPATHCLOUDTENANTNAME: ${{ vars.UIPATHCLOUDTENANTNAME }}
+  UIPATHCLOUDORCHESTRATORURL: ${{ vars.UIPATHCLOUDORCHESTRATORURL }}
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest # Use a Windows runner
+    environment:
+      name: Development
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Read project.json and echo version
+        run: |
+          $json = Get-Content "$env:GITHUB_WORKSPACE\project.json" -Raw | ConvertFrom-Json
+          $projectVersion = $json.projectVersion
+          echo "PROJECT_VERSION=$projectVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $name = $json.name
+          echo "PROJECT_NAME=$name" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo $json
+        shell: pwsh
