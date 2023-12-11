@@ -2,6 +2,11 @@ name: Check Environments Existence
 
 on:
   workflow_dispatch:
+    inputs:
+      custom_parameter:
+        description: "Custom Parameter"
+        required: true
+        default: "default_value"
 
 jobs:
   check-environments:
