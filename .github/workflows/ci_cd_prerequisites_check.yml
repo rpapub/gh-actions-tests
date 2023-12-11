@@ -1,43 +1,56 @@
 name: Check Environments Existence
 
 on:
-  schedule:
-    - cron: "42 3 10 * *" # Run at 3:42am (UTC) on the 10th of every month
   workflow_dispatch:
     inputs:
-      custom_parameter:
-        description: "Custom Parameter"
+      token:
+        description: "GitHub Token"
         required: true
-        default: "default_value"
 
 jobs:
   check-environments:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check Development Environment
+      - name: Check Environments
+        id: check
         run: |
-          if [[ -z "$DEVELOPMENT_ENVIRONMENT_URL" ]]; then
-            echo "Development environment does not exist."
-            exit 1
-          else
+          GITHUB_TOKEN=$1
+          repo_owner=$(echo $GITHUB_REPOSITORY | cut -d'/' -f1)
+          repo_name=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
+
+          # Check if Development environment exists
+          development_status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -X GET "https://api.github.com/repos/$repo_owner/$repo_name/environments/Development")
+
+          # Check if Testing environment exists
+          testing_status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -X GET "https://api.github.com/repos/$repo_owner/$repo_name/environments/Testing")
+
+          # Check if Production environment exists
+          production_status=$(curl -s -o /dev/null -w "%{http_code}" \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -X GET "https://api.github.com/repos/$repo_owner/$repo_name/environments/Production")
+
+          if [ $development_status -eq 200 ]; then
             echo "Development environment exists."
+          else
+            echo "Development environment does not exist."
           fi
 
-      - name: Check Testing Environment
-        run: |
-          if [[ -z "$TESTING_ENVIRONMENT_URL" ]]; then
-            echo "Testing environment does not exist."
-            exit 1
-          else
+          if [ $testing_status -eq 200 ]; then
             echo "Testing environment exists."
+          else
+            echo "Testing environment does not exist."
           fi
 
-      - name: Check Production Environment
-        run: |
-          if [[ -z "$PRODUCTION_ENVIRONMENT_URL" ]]; then
-            echo "Production environment does not exist."
-            exit 1
-          else
+          if [ $production_status -eq 200 ]; then
             echo "Production environment exists."
+          else
+            echo "Production environment does not exist."
           fi
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
