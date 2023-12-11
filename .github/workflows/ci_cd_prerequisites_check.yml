@@ -1,6 +1,8 @@
 name: Check Environments Existence
 
 on:
+  schedule:
+    - cron: "42 3 10 * *" # Run at 3:42am (UTC) on the 10th of every month
   workflow_dispatch:
     inputs:
       custom_parameter:
