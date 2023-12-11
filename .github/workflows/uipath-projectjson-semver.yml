@@ -3,7 +3,8 @@ name: UiPath project.json semver versioning
 on:
   push:
     branches:
-      - "**" # Trigger on pushes to any branch
+      #- "**" # Trigger on pushes to any branch
+      - dev
   pull_request:
     branches:
       - "**" # Trigger on pull requests to any branch
@@ -13,12 +14,12 @@ on:
 
 env:
   # Setting an environment variable with the value of a configuration variable
-  UIPATHCLOUDACCOUNTNAME: ${{ vars.UIPATHCLOUDACCOUNTNAME }}
-  UIPATHCLOUDAPPLICATIONID: ${{ vars.UIPATHCLOUDAPPLICATIONID }}
-  UIPATHCLOUDAPPLICATIONSCOPE: ${{ vars.UIPATHCLOUDAPPLICATIONSCOPE }}
-  UIPATHCLOUDFOLDERNAME: ${{ vars.UIPATHCLOUDFOLDERNAME }}
-  UIPATHCLOUDTENANTNAME: ${{ vars.UIPATHCLOUDTENANTNAME }}
-  UIPATHCLOUDORCHESTRATORURL: ${{ vars.UIPATHCLOUDORCHESTRATORURL }}
+  UIPATHCLOUDACCOUNTNAME: ${{ secrets.UIPATHCLOUDACCOUNTNAME }}
+  UIPATHCLOUDAPPLICATIONID: ${{ secrets.UIPATHCLOUDAPPLICATIONID }}
+  UIPATHCLOUDAPPLICATIONSCOPE: ${{ secrets.UIPATHCLOUDAPPLICATIONSCOPE }}
+  UIPATHCLOUDFOLDERNAME: ${{ secrets.UIPATHCLOUDFOLDERNAME }}
+  UIPATHCLOUDTENANTNAME: ${{ secrets.UIPATHCLOUDTENANTNAME }}
+  UIPATHCLOUDORCHESTRATORURL: ${{ secrets.UIPATHCLOUDORCHESTRATORURL }}
 
 jobs:
   build-and-deploy:
@@ -29,13 +30,87 @@ jobs:
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
+        with:
+          ref: dev
 
       - name: Read project.json and echo version
         run: |
           $json = Get-Content "$env:GITHUB_WORKSPACE\project.json" -Raw | ConvertFrom-Json
-          $projectVersion = $json.projectVersion
-          echo "PROJECT_VERSION=$projectVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
+          $env:PROJECT_VERSION = $json.projectVersion
+          echo "PROJECT_VERSION=$env:PROJECT_VERSION" | Out-File -FilePath $env:GITHUB_ENV -Append
           $name = $json.name
           echo "PROJECT_NAME=$name" | Out-File -FilePath $env:GITHUB_ENV -Append
           echo $json
         shell: pwsh
+
+        # New step to echo the PROJECT_VERSION
+      - name: Echo Project Version
+        run: |
+          echo "Project Version: $env:PROJECT_VERSION"
+          echo "Project Name: $env:PROJECT_NAME"
+
+      - name: Check Commit Message for Version Bump
+        run: |
+          echo "Project Version: $env:PROJECT_VERSION"
+          echo "Project Name: $env:PROJECT_NAME"
+          if ($env:PROJECT_VERSION -ne $null -and $env:PROJECT_VERSION -ne "") {
+            $versionParts = $env:PROJECT_VERSION.Split(".")
+            if ($versionParts.Length -eq 3) {
+                # Increment major, minor, or patch version based on commit message
+                $major = [int]$versionParts[0]
+                $minor = [int]$versionParts[1]
+                $patch = [int]$versionParts[2]
+
+                $commitMessage = git log --format=%B -n 1
+                if ($commitMessage -match "(?i)breaking") {
+                    # Increment major version
+                    $major++
+                } elseif ($commitMessage -match "(?i)feature") {
+                    # Increment minor version
+                    $minor++
+                } else {
+                    # Increment patch version
+                    $patch++
+                }
+
+                $newVersion = "${major}.${minor}.${patch}"
+
+                # Set the new version in the environment variable
+                echo "PROJECT_VERSION=$newVersion" | Out-File -FilePath $env:GITHUB_ENV -Append
+            } else {
+                Write-Host "env:PROJECT_VERSION format is incorrect. Unable to increment version."
+                exit 1
+            }
+          } else {
+            Write-Host "env:PROJECT_VERSION is null or empty. Unable to increment version."
+            exit 1
+          }
+          echo "New version: $newVersion"
+        shell: pwsh
+
+      - name: Update project.json with New Version
+        run: |
+          $json = Get-Content "$env:GITHUB_WORKSPACE\project.json" -Raw | ConvertFrom-Json
+          $json.projectVersion = $env:PROJECT_VERSION
+          $json | ConvertTo-Json | Set-Content "$env:GITHUB_WORKSPACE\project.json"
+
+          # Git commands to commit the changes
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add "$env:GITHUB_WORKSPACE\project.json"
+          git commit -m "Version bump in project.json to new version $env:PROJECT_VERSION"
+          git push
+
+        shell: pwsh
+
+      - name: Echo project.json
+        run: |
+          $json = Get-Content "$env:GITHUB_WORKSPACE\project.json" -Raw | ConvertFrom-Json
+          echo $json
+        shell: pwsh
+
+      # New step to echo the PROJECT_VERSION
+      - name: Echo Project Version
+        run: |
+          echo "Project Version: $env:PROJECT_VERSION"
+          echo "Project Name: $env:PROJECT_NAME"
