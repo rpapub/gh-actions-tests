@@ -1,0 +1,36 @@
+name: Check Environments Existence
+
+on:
+  workflow_dispatch:
+
+jobs:
+  check-environments:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check Development Environment
+        run: |
+          if [[ -z "$DEVELOPMENT_ENVIRONMENT_URL" ]]; then
+            echo "Development environment does not exist."
+            exit 1
+          else
+            echo "Development environment exists."
+          fi
+
+      - name: Check Testing Environment
+        run: |
+          if [[ -z "$TESTING_ENVIRONMENT_URL" ]]; then
+            echo "Testing environment does not exist."
+            exit 1
+          else
+            echo "Testing environment exists."
+          fi
+
+      - name: Check Production Environment
+        run: |
+          if [[ -z "$PRODUCTION_ENVIRONMENT_URL" ]]; then
+            echo "Production environment does not exist."
+            exit 1
+          else
+            echo "Production environment exists."
+          fi
