@@ -1,17 +1,17 @@
 name: Generic DevSecOps
 
 on:
-    pull_request:
-        branches: [ testing ]
-    schedule:
-        - cron: "42 3 10 * *" # Run at 3:42am (UTC) on the 10th of every month
-    workflow_dispatch: # Allow manual triggering of the workflow
+  pull_request:
+    branches: [testing]
+  schedule:
+    - cron: "42 3 10 * *" # Run at 3:42am (UTC) on the 10th of every month
+  workflow_dispatch: # Allow manual triggering of the workflow
 
 jobs:
-    echo-message:
-        runs-on: ubuntu-latest  # You can change the runner to your preferred OS
-        environment:
-          name: Development
-        steps:
-            - name: Echo a Message
-            run: echo "Build pull request on testing branch or manually triggered"
+  echo-message:
+    runs-on: ubuntu-latest # You can change the runner to your preferred OS
+    environment:
+      name: Development
+    steps:
+      - name: Echo a Message
+        run: echo "Build pull request on testing branch or manually triggered"

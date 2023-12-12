@@ -1,17 +1,17 @@
 name: Generic DevSecOps
 
 on:
-    push:
-        branches: [ dev*, feature* ]
-    schedule:
-        - cron: "42 3 10 * *" # Run at 3:42am (UTC) on the 10th of every month
-    workflow_dispatch: # Allow manual triggering of the workflow
+  push:
+    branches: [dev*, feature*]
+  schedule:
+    - cron: "42 3 10 * *" # Run at 3:42am (UTC) on the 10th of every month
+  workflow_dispatch: # Allow manual triggering of the workflow
 
 jobs:
-    echo-message:
-        runs-on: ubuntu-latest  # You can change the runner to your preferred OS
-        environment:
-          name: Development
-        steps:
-            - name: Echo a Message
-            run: echo "Code pushed to feature* or dev* branches or manually triggered."
+  echo-message:
+    runs-on: ubuntu-latest # You can change the runner to your preferred OS
+    environment:
+      name: Development
+    steps:
+      - name: Echo a Message
+        run: echo "Code pushed to feature* or dev* branches or manually triggered."
