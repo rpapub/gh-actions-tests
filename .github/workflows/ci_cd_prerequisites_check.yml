@@ -19,20 +19,28 @@ jobs:
           repo_owner=$(echo $GITHUB_REPOSITORY | cut -d'/' -f1)
           repo_name=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
 
+          echo "Checking environments for repository: $repo_owner/$repo_name"
+
           # Check if Development environment exists
           development_status=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: token $GITHUB_TOKEN" \
             -X GET "https://api.github.com/repos/$repo_owner/$repo_name/environments/Development")
+
+          echo "Development environment status code: $development_status"
 
           # Check if Testing environment exists
           testing_status=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: token $GITHUB_TOKEN" \
             -X GET "https://api.github.com/repos/$repo_owner/$repo_name/environments/Testing")
 
+          echo "Testing environment status code: $testing_status"
+
           # Check if Production environment exists
           production_status=$(curl -s -o /dev/null -w "%{http_code}" \
             -H "Authorization: token $GITHUB_TOKEN" \
             -X GET "https://api.github.com/repos/$repo_owner/$repo_name/environments/Production")
+
+          echo "Production environment status code: $production_status"
 
           if [ $development_status -eq 200 ]; then
             echo "Development environment exists."
