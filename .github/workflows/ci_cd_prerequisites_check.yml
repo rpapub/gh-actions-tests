@@ -15,7 +15,6 @@ jobs:
       - name: Check Environments
         id: check
         run: |
-          GITHUB_TOKEN=$1
           repo_owner=$(echo $GITHUB_REPOSITORY | cut -d'/' -f1)
           repo_name=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
 
@@ -23,21 +22,21 @@ jobs:
 
           # Check if Development environment exists
           development_status=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Authorization: token ${{ secrets.TOKEN_CPRIMA_FORRPAPUB_GHACTIONSTESTS }}" \
             -X GET "https://api.github.com/repos/$repo_owner/$repo_name/environments/Development")
 
           echo "Development environment status code: $development_status"
 
           # Check if Testing environment exists
           testing_status=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Authorization: token ${{ secrets.TOKEN_CPRIMA_FORRPAPUB_GHACTIONSTESTS }}" \
             -X GET "https://api.github.com/repos/$repo_owner/$repo_name/environments/Testing")
 
           echo "Testing environment status code: $testing_status"
 
           # Check if Production environment exists
           production_status=$(curl -s -o /dev/null -w "%{http_code}" \
-            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Authorization: token ${{ secrets.TOKEN_CPRIMA_FORRPAPUB_GHACTIONSTESTS }}" \
             -X GET "https://api.github.com/repos/$repo_owner/$repo_name/environments/Production")
 
           echo "Production environment status code: $production_status"
@@ -59,6 +58,3 @@ jobs:
           else
             echo "Production environment does not exist."
           fi
-
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
