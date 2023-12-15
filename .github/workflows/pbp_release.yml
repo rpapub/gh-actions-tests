@@ -1,0 +1,18 @@
+# This workflow sets the Orchestrator version to active upon release.
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  activate_orchestrator_version:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Set Orchestrator Version to Active
+        run: echo "just a debug echo message"
+        # Add step to set the Orchestrator version to active

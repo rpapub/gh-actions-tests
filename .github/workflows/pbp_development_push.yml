@@ -1,0 +1,23 @@
+# This workflow runs the UiPath Workflow Analyzer and pushes results to SonarQube.
+name: Development Push
+
+on:
+  push:
+    branches:
+      - "dev/**"
+      - "feature/**"
+
+jobs:
+  analyze_and_push_to_sonarqube:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Run UiPath Workflow Analyzer
+        run: echo "just a debug echo message"
+        # Add step to run UiPath Workflow Analyzer
+
+      - name: Push Results to SonarQube
+        run: echo "just a debug echo message"
+        # Add step to push results to SonarQube

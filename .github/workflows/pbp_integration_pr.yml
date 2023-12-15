@@ -1,0 +1,27 @@
+# This workflow increments the version number, customizes the codebase per environment,
+# and builds NuGet package per environment (per entrypoint if feature toggled).
+name: PR to Integration
+
+on:
+  pull_request:
+    branches:
+      - "integration"
+
+jobs:
+  prepare_for_integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Increment Version Number
+        run: echo "just a debug echo message"
+        # Add step to increment version number
+
+      - name: Customize Codebase for Each Environment
+        run: echo "just a debug echo message"
+        # Add steps to customize codebase per environment
+
+      - name: Build NuGet Package per Environment
+        run: echo "just a debug echo message"
+        # Add steps to build NuGet package per environment (conditionally per entrypoint)

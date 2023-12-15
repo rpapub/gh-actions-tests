@@ -1,0 +1,33 @@
+# This workflow regularly synchronizes the integration branch with the main branch.
+name: Scheduled Main to Integration Sync
+
+# Triggers the workflow on a schedule or manually (workflow_dispatch).
+on:
+  schedule:
+    - cron: "0 0 * * *" # Runs every day at midnight
+  workflow_dispatch:
+
+jobs:
+  sync_main_to_integration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Main Branch
+        uses: actions/checkout@v2
+        with:
+          ref: "main"
+
+      - name: Merge Main into Integration
+        run: |
+          git checkout -b integration
+          git merge main
+          # Add any additional steps required before pushing the changes
+
+      - name: Push Changes to Integration
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git push origin integration
+
+      - name: Notify Completion
+        run: echo "Sync process complete"
+        # Add step to notify team members of the completion of the sync process

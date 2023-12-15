@@ -1,0 +1,22 @@
+# This workflow pushes NuGet packages to Orchestrator tenants per environment and notifies stakeholders.
+name: Integration Push
+
+on:
+  push:
+    branches:
+      - "integration"
+
+jobs:
+  deploy_and_notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Push to NuGet Feeds in Orchestrator Tenants
+        run: echo "just a debug echo message"
+        # Add steps to push packages to Orchestrator tenant feeds per environment
+
+      - name: Notify Stakeholders
+        run: echo "just a debug echo message"
+        # Add step to notify stakeholders
