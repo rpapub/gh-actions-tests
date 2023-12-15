@@ -1,0 +1,36 @@
+name: RnD - Set Environment Variables from Settings
+
+on:
+  workflow_dispatch: # Allow manual triggering of the workflow
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Echo a Message
+        run: echo "just a debug echo message"
+
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Checkout Configurations
+        uses: actions/checkout@v3
+        with:
+          repository: "rpapub/ci-cd-infra-uipath"
+          ref: "feature-setenvvars"
+          github-server-url: "https://github.com/"
+          path: "ci-cd-infra-uipath"
+
+      - name: Run PowerShell Script
+        run: |
+          .\ci-cd-infra-uipath\scripts\Set-EnvVarsFromSettings.ps1
+          Get-ChildItem env: | ForEach-Object { Write-Host $_.Name = $_.Value }
+        env:
+          CPM_FOO: "foo"
+          CPM_BAR: "bar"
+
+      - name: Echo All Environment Variables
+        shell: pwsh
+        run: |
+          Get-ChildItem env: | ForEach-Object { Write-Host $_.Name = $_.Value }
