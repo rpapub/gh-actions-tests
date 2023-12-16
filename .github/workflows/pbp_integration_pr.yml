@@ -4,6 +4,9 @@ name: PR to Integration
 
 on:
   pull_request:
+    types:
+      - opened
+      - synchronize
     branches:
       - "integration"
 
