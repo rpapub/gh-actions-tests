@@ -1,8 +1,8 @@
 name: Generic DevSecOps
 
 on:
-  push:
-    branches: [dev*, feature*]
+  #push:
+  #  branches: [dev*, feature*]
   #schedule:
   #  - cron: "42 3 10 * *" # Run at 3:42am (UTC) on the 10th of every month
   workflow_dispatch: # Allow manual triggering of the workflow
