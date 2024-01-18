@@ -19,7 +19,7 @@ jobs:
       - name: Merge Master into Integration
         run: |
           git checkout -b integration
-          git merge master
+          git merge master -X ours
           # Add any additional steps required before pushing the changes
 
       - name: Push Changes to Integration
