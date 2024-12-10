@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test-magick:
+  test-imagemagick:
     runs-on: ubuntu-latest
 
     steps:
@@ -12,47 +12,135 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Install required fonts and ImageMagick
-      - name: Install Fonts and ImageMagick
+      # Install Linux Libertine and Biolinum Fonts
+      - name: Install Fonts
         run: |
           sudo apt-get update
-          sudo apt-get install -y fonts-linuxlibertine fonts-dejavu imagemagick
+          sudo apt-get install -y fonts-linuxlibertine
+          sudo apt-get install -y fonts-dejavu-core fonts-dejavu-extra
+          sudo apt install -y gsfonts
           sudo fc-cache -f -v
 
-      # Debug installed fonts and ImageMagick
-      - name: Debug Fonts and ImageMagick
+      # Test with ImageMagick 6 (convert)
+      - name: Test with ImageMagick 6 (convert)
         run: |
-          echo "Listing available fonts..."
-          fc-list
-          echo "Listing fonts recognized by ImageMagick..."
-          magick -list font
-          echo "Displaying Linux Libertine font file..."
-          ls -l /usr/share/fonts/opentype/linux-libertine/
-          echo "Displaying DejaVu Sans font file..."
-          ls -l /usr/share/fonts/truetype/dejavu/
+          echo "Using ImageMagick 6 (convert)..."
+          sudo apt-get update
+          sudo apt-get install -y imagemagick imagemagick-6.q16 gsfonts
+          echo "ImageMagick 6 version:"
+          convert --version
+          echo "Checking if 'convert' is in PATH..."
+          which convert
 
-      # Create a test SVG file
-      - name: Create Test SVG
-        run: |
+          echo "Listing available fonts in ImageMagick 6..."
+          convert -list font
+
+          echo "Creating SVG files for testing..."
           mkdir -p _site/assets/images/opengraph/linkedin/
-          cat <<EOF > _site/assets/images/opengraph/linkedin/test.svg
+
+          # SVG without font-family (default behavior)
+          cat <<EOF > _site/assets/images/opengraph/linkedin/test-im6-default.svg
           <svg width="1600" height="840" xmlns="http://www.w3.org/2000/svg">
             <rect width="1600" height="840" fill="#fdf6e3" />
             <rect y="200" width="1600" height="100" fill="#cb4b16" />
-            <text x="800" y="260" font-size="48" text-anchor="middle" fill="#002b36" dominant-baseline="middle" font-family="Linux Biolinum, sans-serif">
-              Test Font Rendering
+            <text x="800" y="260" font-size="48" text-anchor="middle" fill="#002b36" dominant-baseline="middle">
+              Test Font Rendering with Default Font
             </text>
           </svg>
           EOF
 
-      # Convert SVG to PNG using ImageMagick
-      - name: Convert Test SVG to PNG
-        run: |
-          magick _site/assets/images/opengraph/linkedin/test.svg \
-                 -font "/usr/share/fonts/opentype/linux-libertine/LinBiolinum_R.otf" \
-                 _site/assets/images/opengraph/linkedin/test.png
+          # SVG with explicit font-family
+          cat <<EOF > _site/assets/images/opengraph/linkedin/test-im6-explicit.svg
+          <svg width="1600" height="840" xmlns="http://www.w3.org/2000/svg">
+            <rect width="1600" height="840" fill="#fdf6e3" />
+            <rect y="200" width="1600" height="100" fill="#cb4b16" />
+            <text x="800" y="260" font-size="48" text-anchor="middle" fill="#002b36" dominant-baseline="middle" font-family="Linux Biolinum, sans-serif">
+              Test Font Rendering with Explicit Font-Family
+            </text>
+          </svg>
+          EOF
 
-      # Verify Conversion
-      - name: Verify Conversion Output
+          echo "Displaying the contents of the SVG files..."
+          echo "SVG without font-family:"
+          cat _site/assets/images/opengraph/linkedin/test-im6-default.svg
+
+          echo "SVG with explicit font-family:"
+          cat _site/assets/images/opengraph/linkedin/test-im6-explicit.svg
+
+          echo "Converting SVGs to PNGs using 'convert'..."
+
+          # Convert SVG without font-family (default behavior, with gsfonts installed)
+          convert _site/assets/images/opengraph/linkedin/test-im6-default.svg \
+                  _site/assets/images/opengraph/linkedin/test-im6-default.png
+
+          # Convert SVG with explicit font-family
+          convert _site/assets/images/opengraph/linkedin/test-im6-explicit.svg \
+                  -font "/usr/share/fonts/opentype/linux-libertine/LinBiolinum_R.otf" \
+                  _site/assets/images/opengraph/linkedin/test-im6-explicit.png
+
+          echo "Conversion complete. Listing output directory..."
+          ls -l _site/assets/images/opengraph/linkedin/
+
+      # Test with ImageMagick 7 (magick)
+      - name: Test with ImageMagick 7 (magick)
         run: |
+          echo "Switching to ImageMagick 7 (magick)..."
+          sudo apt-get remove -y imagemagick imagemagick-6.q16
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository -y ppa:imagemagick/ppa
+          sudo apt-get update
+          sudo apt-get install -y imagemagick
+          echo "ImageMagick 7 version:"
+          magick --version
+          echo "Checking if 'magick' is in PATH..."
+          which magick
+
+          echo "Listing available fonts in ImageMagick 7..."
+          magick -list font
+
+          echo "Creating SVG files for testing..."
+          mkdir -p _site/assets/images/opengraph/linkedin/
+
+          # SVG without font-family (default behavior)
+          cat <<EOF > _site/assets/images/opengraph/linkedin/test-im7-default.svg
+          <svg width="1600" height="840" xmlns="http://www.w3.org/2000/svg">
+            <rect width="1600" height="840" fill="#fdf6e3" />
+            <rect y="200" width="1600" height="100" fill="#cb4b16" />
+            <text x="800" y="260" font-size="48" text-anchor="middle" fill="#002b36" dominant-baseline="middle">
+              Test Font Rendering with Default Font
+            </text>
+          </svg>
+          EOF
+
+          # SVG with explicit font-family
+          cat <<EOF > _site/assets/images/opengraph/linkedin/test-im7-explicit.svg
+          <svg width="1600" height="840" xmlns="http://www.w3.org/2000/svg">
+            <rect width="1600" height="840" fill="#fdf6e3" />
+            <rect y="200" width="1600" height="100" fill="#cb4b16" />
+            <text x="800" y="260" font-size="48" text-anchor="middle" fill="#002b36" dominant-baseline="middle" font-family="Linux Biolinum, sans-serif">
+              Test Font Rendering with Explicit Font-Family
+            </text>
+          </svg>
+          EOF
+
+          echo "Displaying the contents of the SVG files..."
+          echo "SVG without font-family:"
+          cat _site/assets/images/opengraph/linkedin/test-im7-default.svg
+
+          echo "SVG with explicit font-family:"
+          cat _site/assets/images/opengraph/linkedin/test-im7-explicit.svg
+
+          echo "Converting SVGs to PNGs using 'magick'..."
+
+          # Convert SVG without font-family (default behavior)
+          magick _site/assets/images/opengraph/linkedin/test-im7-default.svg \
+                _site/assets/images/opengraph/linkedin/test-im7-default.png
+
+          # Convert SVG with explicit font-family
+          magick _site/assets/images/opengraph/linkedin/test-im7-explicit.svg \
+                -font "/usr/share/fonts/opentype/linux-libertine/LinBiolinum_R.otf" \
+                _site/assets/images/opengraph/linkedin/test-im7-explicit.png
+
+          echo "Conversion complete. Listing output directory..."
           ls -l _site/assets/images/opengraph/linkedin/
