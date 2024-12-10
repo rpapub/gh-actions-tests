@@ -1,0 +1,58 @@
+name: Test ImageMagick on GitHub Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-magick:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Install required fonts and ImageMagick
+      - name: Install Fonts and ImageMagick
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fonts-linuxlibertine fonts-dejavu imagemagick
+          sudo fc-cache -f -v
+
+      # Debug installed fonts and ImageMagick
+      - name: Debug Fonts and ImageMagick
+        run: |
+          echo "Listing available fonts..."
+          fc-list
+          echo "Listing fonts recognized by ImageMagick..."
+          magick -list font
+          echo "Displaying Linux Libertine font file..."
+          ls -l /usr/share/fonts/opentype/linux-libertine/
+          echo "Displaying DejaVu Sans font file..."
+          ls -l /usr/share/fonts/truetype/dejavu/
+
+      # Create a test SVG file
+      - name: Create Test SVG
+        run: |
+          mkdir -p _site/assets/images/opengraph/linkedin/
+          cat <<EOF > _site/assets/images/opengraph/linkedin/test.svg
+          <svg width="1600" height="840" xmlns="http://www.w3.org/2000/svg">
+            <rect width="1600" height="840" fill="#fdf6e3" />
+            <rect y="200" width="1600" height="100" fill="#cb4b16" />
+            <text x="800" y="260" font-size="48" text-anchor="middle" fill="#002b36" dominant-baseline="middle" font-family="Linux Biolinum, sans-serif">
+              Test Font Rendering
+            </text>
+          </svg>
+          EOF
+
+      # Convert SVG to PNG using ImageMagick
+      - name: Convert Test SVG to PNG
+        run: |
+          magick _site/assets/images/opengraph/linkedin/test.svg \
+                 -font "/usr/share/fonts/opentype/linux-libertine/LinBiolinum_R.otf" \
+                 _site/assets/images/opengraph/linkedin/test.png
+
+      # Verify Conversion
+      - name: Verify Conversion Output
+        run: |
+          ls -l _site/assets/images/opengraph/linkedin/
